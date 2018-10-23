@@ -6,48 +6,29 @@
 #include "evaluate_helper.hpp"
 
 namespace alps {
-
-class Disorder
-{
-public:
-  typedef boost::mt19937 random_type;
-private:
-  static random_type rng_;
-  static int last_seed_;
-public:
-  static boost::variate_generator<random_type&,boost::uniform_real<> > random;
-  static boost::variate_generator<random_type&,boost::normal_distribution<> > gaussian_random;
-  static void seed(unsigned int =0);
-  // static void seed_if_unseeded(const alps::Parameters&);
-};
-
 namespace expression {
 
 template<class T>
-class Evaluator {
+class evaluator {
 public:
   typedef T value_type;
   enum Direction { left_to_right, right_to_left };
-  Evaluator(bool rand=true) : evaluate_random_(rand) {}
-  virtual ~Evaluator() {}
+  evaluator() {}
+  virtual ~evaluator() {}
 
   virtual bool can_evaluate(const std::string&, bool=false) const;
-  virtual bool can_evaluate_function(const std::string&, const Expression<T>&, bool=false) const;
-  virtual bool can_evaluate_function(const std::string&, const std::vector<Expression<T> >&, bool=false) const;
+  virtual bool can_evaluate_function(const std::string&, const expression<T>&, bool=false) const;
+  virtual bool can_evaluate_function(const std::string&, const std::vector<expression<T> >&, bool=false) const;
   virtual value_type evaluate(const std::string&, bool=false) const;
-  virtual value_type evaluate_function(const std::string&, const Expression<T>&, bool=false) const;
-  virtual value_type evaluate_function(const std::string&, const std::vector<Expression<T> >&, bool=false) const;
-  virtual Expression<T> partial_evaluate(const std::string& name, bool=false) const;
-  virtual Expression<T> partial_evaluate_function(const std::string& name, const Expression<T>&, bool=false) const;
-  virtual Expression<T> partial_evaluate_function(const std::string& name, const std::vector<Expression<T> >&, bool=false) const;
+  virtual value_type evaluate_function(const std::string&, const expression<T>&, bool=false) const;
+  virtual value_type evaluate_function(const std::string&, const std::vector<expression<T> >&, bool=false) const;
+  virtual expression<T> partial_evaluate(const std::string& name, bool=false) const;
+  virtual expression<T> partial_evaluate_function(const std::string& name, const expression<T>&, bool=false) const;
+  virtual expression<T> partial_evaluate_function(const std::string& name, const std::vector<expression<T> >&, bool=false) const;
   virtual Direction direction() const;
 
-  bool can_evaluate_expressions(const std::vector<Expression<T> >&, bool=false) const;
-  void partial_evaluate_expressions(std::vector<Expression<T> >&, bool=false) const;
-  bool evaluate_random() const { return evaluate_random_;}
-
-private:
-  bool evaluate_random_;
+  bool can_evaluate_expressions(const std::vector<expression<T> >&, bool=false) const;
+  void partial_evaluate_expressions(std::vector<expression<T> >&, bool=false) const;
 };
 
 
@@ -57,13 +38,13 @@ class ParameterEvaluator : public Evaluator<T> {
 public:
   typedef Evaluator<T> super_type;
   typedef T value_type;
-  ParameterEvaluator(const Parameters& p, bool rand=true) 
-  : Evaluator<T>(rand), parms_(p) { Disorder::seed_if_unseeded(p);}
+  ParameterEvaluator(const Parameters& p) 
+  : Evaluator<T>(), parms_(p) {}
   virtual ~ParameterEvaluator() {}
 
   bool can_evaluate(const std::string&, bool=false) const;
   value_type evaluate(const std::string&, bool=false) const;
-  Expression<T> partial_evaluate(const std::string& name, bool=false) const;
+  expression<T> partial_evaluate(const std::string& name, bool=false) const;
   const Parameters& parameters() const { return parms_;}
 protected:
   void set_parameters(const Parameters& p) { parms_=p;}
@@ -73,34 +54,34 @@ private:
 **/
 
 template<class T>
-bool Evaluator<T>::can_evaluate(const std::string& name, bool isarg) const {
+bool evaluator<T>::can_evaluate(const std::string& name, bool isarg) const {
   return evaluate_helper<T>::can_evaluate_symbol(name, isarg);
 }
 
 template<class T>
-bool Evaluator<T>::can_evaluate_function(const std::string& name, const Expression<T>& arg, bool) const
+bool evaluator<T>::can_evaluate_function(const std::string& name, const expression<T>& arg, bool) const
 {
   return arg.can_evaluate(*this,true) &&
          (name=="sqrt" || name=="abs" ||
           name=="sin" || name=="cos" || name=="tan" ||
           name=="asin" || name=="acos" || name=="atan" ||
-          name=="log" || name=="exp" || (evaluate_random_ && name=="integer_random"));
+          name=="log" || name=="exp");
 }
 
 
 template<class T>
-bool Evaluator<T>::can_evaluate_expressions(const std::vector<Expression<T> >& arg, bool f) const
+bool evaluator<T>::can_evaluate_expressions(const std::vector<expression<T> >& arg, bool f) const
 {
   bool can=true;
-  for (typename std::vector<Expression<T> >::const_iterator it=arg.begin();it!=arg.end();++it)
+  for (typename std::vector<expression<T> >::const_iterator it=arg.begin();it!=arg.end();++it)
     can = can && it->can_evaluate(*this,f);
   return can;
 }
 
 template<class T>
-void Evaluator<T>::partial_evaluate_expressions(std::vector<Expression<T> >& arg, bool f) const
+void evaluator<T>::partial_evaluate_expressions(std::vector<expression<T> >& arg, bool f) const
 {
-  for (typename std::vector<Expression<T> >::iterator it=arg.begin();it!=arg.end();++it) {
+  for (typename std::vector<expression<T> >::iterator it=arg.begin();it!=arg.end();++it) {
    it->partial_evaluate(*this,f);
    it->simplify();
   }
@@ -108,24 +89,22 @@ void Evaluator<T>::partial_evaluate_expressions(std::vector<Expression<T> >& arg
 
 
 template<class T>
-bool Evaluator<T>::can_evaluate_function(const std::string& name, const std::vector<Expression<T> >& arg, bool f) const
+bool evaluator<T>::can_evaluate_function(const std::string& name, const std::vector<expression<T> >& arg, bool f) const
 {
-  bool can= can_evaluate_expressions(arg,true) &&
-       ((arg.size()==0 && evaluate_random_ && (name == "random" || name=="gaussian_random" || name == "normal_random")) ||
-        (arg.size()==1 && can_evaluate_function(name,arg[0],f)) || 
-        (arg.size()==2 && (evaluate_random_ && (name=="gaussian_random" || name=="atan2"))));
+  bool can = can_evaluate_expressions(arg, true) &&
+    (arg.size() == 1 && can_evaluate_function(name,arg[0], f));
   return can;
 }
 
 
 template<class T>
-typename Evaluator<T>::Direction Evaluator<T>::direction() const
+typename evaluator<T>::Direction evaluator<T>::direction() const
 {
-  return Evaluator<T>::left_to_right;
+  return evaluator<T>::left_to_right;
 }
 
 template<class T>
-typename Evaluator<T>::value_type Evaluator<T>::evaluate(const std::string& name,bool isarg) const
+typename evaluator<T>::value_type evaluator<T>::evaluate(const std::string& name,bool isarg) const
 {
   if (evaluate_helper<T>::can_evaluate_symbol(name, isarg))
     return evaluate_helper<T>::evaluate_symbol(name, isarg);
@@ -133,31 +112,31 @@ typename Evaluator<T>::value_type Evaluator<T>::evaluate(const std::string& name
 }
 
 template<class T>
-typename Evaluator<T>::value_type Evaluator<T>::evaluate_function(const std::string& name, const Expression<T>& arg,bool isarg) const
+typename evaluator<T>::value_type evaluator<T>::evaluate_function(const std::string& name, const expression<T>& arg,bool isarg) const
 {
   return partial_evaluate_function(name,arg,isarg).value();
 }
 
 template<class T>
-typename Evaluator<T>::value_type Evaluator<T>::evaluate_function(const std::string& name, const std::vector<Expression<T> >& arg,bool isarg) const
+typename evaluator<T>::value_type evaluator<T>::evaluate_function(const std::string& name, const std::vector<expression<T> >& arg,bool isarg) const
 {
   return partial_evaluate_function(name,arg,isarg).value();
 }
 
 template<class T>
-Expression<T> Evaluator<T>::partial_evaluate(const std::string& name,bool) const
+expression<T> evaluator<T>::partial_evaluate(const std::string& name,bool) const
 {
-  return Expression<T>(name);
+  return expression<T>(name);
 }
 
 
 template<class T>
-Expression<T> Evaluator<T>::partial_evaluate_function(const std::string& name, const Expression<T>& arg,bool) const
+expression<T> evaluator<T>::partial_evaluate_function(const std::string& name, const expression<T>& arg,bool) const
 {
   if(!arg.can_evaluate(*this,true)) {
-    Expression<T> e(arg);
+    expression<T> e(arg);
     e.partial_evaluate(*this,true);
-    return Expression<T>(Function<T>(name,e));
+    return expression<T>(function<T>(name,e));
   }
   value_type val=arg.value(*this,true);
   if (name=="sqrt")
@@ -180,22 +159,20 @@ Expression<T> Evaluator<T>::partial_evaluate_function(const std::string& name, c
     val = std::exp(val);
   else if (name=="log")
     val = std::log(val);
-  // else if (name=="integer_random" && evaluate_random_)
-  //   val=static_cast<int>(evaluate_helper<T>::real(val)*Disorder::random());
   else
-    return Expression<T>(Function<T>(name,Expression<T>(val)));
-  return Expression<T>(val);
+    return expression<T>(function<T>(name,expression<T>(val)));
+  return expression<T>(val);
 }
 
 template<class T>
-Expression<T> Evaluator<T>::partial_evaluate_function(const std::string& name, const std::vector<Expression<T> >& args,bool isarg) const
+expression<T> evaluator<T>::partial_evaluate_function(const std::string& name, const std::vector<expression<T> >& args,bool isarg) const
 {
   if (args.size()==1)
     return partial_evaluate_function(name,args[0],isarg);
     
-  std::vector<Expression<T> > evaluated;
+  std::vector<expression<T> > evaluated;
   bool could_evaluate = true;
-  for (typename std::vector<Expression<T> >::const_iterator it = args.begin(); it !=args.end();++it) {
+  for (typename std::vector<expression<T> >::const_iterator it = args.begin(); it !=args.end();++it) {
     evaluated.push_back(*it);
     could_evaluate = could_evaluate && it->can_evaluate(*this,true);
     evaluated.rbegin()->partial_evaluate(*this,true);
@@ -204,17 +181,9 @@ Expression<T> Evaluator<T>::partial_evaluate_function(const std::string& name, c
     double arg1=evaluate_helper<T>::real(evaluated[0].value());
     double arg2=evaluate_helper<T>::real(evaluated[1].value());
     if (name=="atan2")
-      return Expression<T>(static_cast<T>(std::atan2(arg1,arg2)));
-    // else if (evaluate_random_ && (name=="gaussian_random" || name=="normal_random"))
-    //   return Expression<T>(arg1+arg2*Disorder::gaussian_random());
+      return expression<T>(static_cast<T>(std::atan2(arg1,arg2)));
   }
-  // else if (evaluated.size()==0) {
-  //   if (evaluate_random_ && name=="random")
-  //     return Expression<T>(Disorder::random());
-  //   else if (evaluate_random_ && (name=="gaussian_random" || name=="normal_random"))
-  //     return Expression<T>(Disorder::gaussian_random());
-  // }
-  return Expression<T>(Function<T>(name,evaluated));
+  return expression<T>(function<T>(name,evaluated));
 }
 
 }

@@ -8,35 +8,35 @@
 namespace alps {
 namespace expression {
 
-template<class T = std::complex<double> > class Expression;
-template<class T = std::complex<double> > class Term;
-template<class T = std::complex<double> > class Factor;
-template<class T = std::complex<double> > class Evaluator;
+template<class T = std::complex<double> > class expression;
+template<class T = std::complex<double> > class term;
+template<class T = std::complex<double> > class factor;
+template<class T = std::complex<double> > class evaluator;
 template<class T = std::complex<double> > class ParameterEvaluator;
-template <class T> class Block;
-template <class T> class Function;
-template <class T> class Number;
-template <class T> class Symbol;
+template <class T> class block;
+template <class T> class function;
+template <class T> class number;
+template <class T> class symbol;
 
 }
   
 template <class T>
-struct is_symbolic<expression::Expression<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::expression<T> > : public boost::mpl::true_ {};
 
 template <class T>
-struct is_symbolic<expression::Term<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::term<T> > : public boost::mpl::true_ {};
 
 template <class T>
-struct is_symbolic<expression::Factor<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::factor<T> > : public boost::mpl::true_ {};
 
 template <class T>
-struct is_symbolic<expression::Block<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::block<T> > : public boost::mpl::true_ {};
 
 template <class T>
-struct is_symbolic<expression::Function<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::function<T> > : public boost::mpl::true_ {};
 
 template <class T>
-struct is_symbolic<expression::Symbol<T> > : public boost::mpl::true_ {};
+struct is_symbolic<expression::symbol<T> > : public boost::mpl::true_ {};
 
 }
 

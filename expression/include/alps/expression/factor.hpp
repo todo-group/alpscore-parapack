@@ -1,78 +1,78 @@
 #ifndef ALPS_EXPRESSION_FACTOR_HPP
 #define ALPS_EXPRESSION_FACTOR_HPP
 
-#include <alps/expression/expression_fwd.hpp>
-#include <alps/expression/symbol.hpp>
-#include <alps/expression/number.hpp>
-#include <alps/expression/block.hpp>
-#include <alps/expression/function.hpp>
-#include <alps/expression/evaluator.hpp>
-// #include <alps/type_traits/norm_type.hpp>
 #include <boost/call_traits.hpp>
+#include <boost/lexical_cast.hpp>
+#include "expression_fwd.hpp"
+#include "symbol.hpp"
+#include "number.hpp"
+#include "block.hpp"
+#include "function.hpp"
+#include "evaluator.hpp"
 
 namespace alps {
 namespace expression {
 
 template<class T>
-class SimpleFactor : public Evaluatable<T> {
+class simple_factor : public evaluatable<T> {
 public:
   typedef T value_type;
   // typedef typename alps::norm_type<T>::type norm_type;
   
-  SimpleFactor(std::istream&);
-  SimpleFactor(typename boost::call_traits<value_type>::param_type x)
-    : term_(new Number<T>(x)) {}
-  SimpleFactor(const std::string& s) : term_(new Symbol<T>(s)) {}
+  simple_factor(std::istream&);
+  simple_factor(typename boost::call_traits<value_type>::param_type x)
+    : term_(new number<T>(x)) {}
+  simple_factor(const std::string& s) : term_(new symbol<T>(s)) {}
 
-  SimpleFactor(const SimpleFactor& v)
-    : Evaluatable<T>(v), term_()
+  simple_factor(const simple_factor& v)
+    : evaluatable<T>(v), term_()
   {
     if (v.term_) term_.reset(v.term_->clone());
   }
   
-  SimpleFactor(const Evaluatable<T>& v) : Evaluatable<T>(v), term_(v.clone()) {}
-  virtual ~SimpleFactor() {}
+  simple_factor(const evaluatable<T>& v) : evaluatable<T>(v), term_(v.clone()) {}
+  virtual ~simple_factor() {}
 
-  const SimpleFactor& operator=(const SimpleFactor& v);
+  const simple_factor& operator=(const simple_factor& v);
 
-  value_type value(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
+  value_type value(const evaluator<T>& =evaluator<T>(), bool=false) const;
   void output(std::ostream&) const;
-  bool can_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
-  Evaluatable<T>* clone() const { return new SimpleFactor<T>(*this); }
-  void partial_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false);
+  bool can_evaluate(const evaluator<T>& =evaluator<T>(), bool=false) const;
+  evaluatable<T>* clone() const { return new simple_factor<T>(*this); }
+  void partial_evaluate(const evaluator<T>& =evaluator<T>(), bool=false);
   bool is_single_term() const { return term_ ? term_->is_single_term() : false; }
-  Term<T> term() const { return term_ ? term_->term() : Term<T>(); }
+  term<T> get_term() const { return term_ ? term_->get_term() : term<T>(); }
   bool depends_on(const std::string& s) const
   {
     return term_ ? term_->depends_on(s) : false;
   }
 
 protected:
-  boost::shared_ptr<Evaluatable<T> > term_;
+  boost::shared_ptr<evaluatable<T> > term_;
 };
 
 template<class T>
-class Factor : public SimpleFactor<T> {
+class factor : public simple_factor<T> {
 public:
   typedef T value_type;
-  typedef SimpleFactor<T> super_type;
+  typedef simple_factor<T> super_type;
   // typedef typename alps::norm_type<T>::type norm_type;
   
-  Factor(std::istream&, bool inverse = false);
-  Factor(typename boost::call_traits<value_type>::param_type x)
+  factor(std::istream&, bool inverse = false);
+  factor(typename boost::call_traits<value_type>::param_type x)
     : super_type(x), is_inverse_(false), power_(1.) {}
-  Factor(const std::string& s) : super_type(s), is_inverse_(false), power_(1.) {}
-  Factor(const Evaluatable<T>& v) : super_type(v), is_inverse_(false), power_(1.) {}
-  Factor(const super_type& v) : super_type(v), is_inverse_(false), power_(1.) {}
-  virtual ~Factor() {}
-  value_type value(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
+  factor(const std::string& s) : super_type(s), is_inverse_(false), power_(1.) {}
+  factor(const evaluatable<T>& v) : super_type(v), is_inverse_(false), power_(1.) {}
+  factor(const super_type& v) : super_type(v), is_inverse_(false), power_(1.) {}
+  virtual ~factor() {}
+  value_type value(const evaluator<T>& =evaluator<T>(), bool=false) const;
   void output(std::ostream&) const;
-  bool can_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
-  Evaluatable<T>* clone() const { return new Factor<T>(*this); }
-  boost::shared_ptr<Factor> flatten_one_value();
+  bool can_evaluate(const evaluator<T>& =evaluator<T>(), bool=false) const;
+  evaluatable<T>* clone() const { return new factor<T>(*this); }
+  boost::shared_ptr<factor> flatten_one_value();
   bool is_inverse() const { return is_inverse_; }
-  void partial_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false);
-  Term<T> term() const { return unit_power() ? super_type::term() : (super_type::term_ ? Term<T>(*this) : Term<T>()); }
+  void partial_evaluate(const evaluator<T>& =evaluator<T>(), bool=false);
+  term<T> get_term() const { return unit_power() ? super_type::get_term() : (super_type::term_ ? term<T>(*this) : term<T>()); }
   bool depends_on(const std::string& s) const
   {
     return super_type::depends_on(s) || power_.depends_on(s);
@@ -82,15 +82,15 @@ public:
 
 private:
   bool is_inverse_;
-  SimpleFactor<T> power_;
+  simple_factor<T> power_;
 };
 
 //
-// implementation of Factor<T>
+// implementation of factor<T>
 //
 
 template<class T>
-SimpleFactor<T>::SimpleFactor(std::istream& in) : term_()
+simple_factor<T>::simple_factor(std::istream& in) : term_()
 {
   char c;
   in >> c;
@@ -98,33 +98,33 @@ SimpleFactor<T>::SimpleFactor(std::istream& in) : term_()
   // read value
   if (std::isdigit(c) || c=='.' || c=='+' || c=='-') {
     in.putback(c);
-    typename Number<T>::real_type val;
+    typename number<T>::real_type val;
     in >> val;
     if (!in)
       boost::throw_exception(std::runtime_error("Failed to parse number in factor"));
-    term_.reset(new Number<T>(value_type(val)));
+    term_.reset(new number<T>(value_type(val)));
   }
   else if (std::isalnum(c)) {
     in.putback(c);
     std::string name = parse_parameter_name(in);
     in>>c;
     if(in && c=='(')
-      term_.reset(new Function<T>(in,name));
+      term_.reset(new function<T>(in,name));
     else  {
       if (in && !in.eof())
         in.putback(c);
-      term_.reset(new Symbol<T>(name));
+      term_.reset(new symbol<T>(name));
     }
   }
   else if (c=='(')
-    term_.reset(new Block<T>(in));
+    term_.reset(new block<T>(in));
   else
     boost::throw_exception(std::runtime_error("Illegal term in expression"));
 }
 
 
 template<class T>
-Factor<T>::Factor(std::istream& in, bool inv) 
+factor<T>::factor(std::istream& in, bool inv) 
  : super_type(in)
  , is_inverse_(inv)
  , power_(1.)
@@ -133,7 +133,7 @@ Factor<T>::Factor(std::istream& in, bool inv)
   in >> c;
   if (in) {
     if (c=='^') {
-      SimpleFactor<T> p(in);
+      simple_factor<T> p(in);
       power_=p;
     }
     else
@@ -142,17 +142,17 @@ Factor<T>::Factor(std::istream& in, bool inv)
 }
 
 template<class T>
-void SimpleFactor<T>::partial_evaluate(const Evaluator<T>& p, bool isarg)
+void simple_factor<T>::partial_evaluate(const evaluator<T>& p, bool isarg)
 {
   if (!term_)
     boost::throw_exception(std::runtime_error("Empty value in expression"));
-  Evaluatable<T>* e=term_->partial_evaluate_replace(p,isarg);
+  evaluatable<T>* e=term_->partial_evaluate_replace(p,isarg);
   if(e!=term_.get()) term_.reset(e);
 }
 
 
 template<class T>
-void Factor<T>::partial_evaluate(const Evaluator<T>& p,bool isarg)
+void factor<T>::partial_evaluate(const evaluator<T>& p,bool isarg)
 {
   super_type::partial_evaluate(p,isarg);
   power_.partial_evaluate(p,isarg);
@@ -160,7 +160,7 @@ void Factor<T>::partial_evaluate(const Evaluator<T>& p,bool isarg)
 
 
 template<class T>
-const SimpleFactor<T>& SimpleFactor<T>::operator=(const SimpleFactor<T>& v)
+const simple_factor<T>& simple_factor<T>::operator=(const simple_factor<T>& v)
 {
   if (v.term_)
     term_.reset(v.term_->clone());
@@ -171,7 +171,7 @@ const SimpleFactor<T>& SimpleFactor<T>::operator=(const SimpleFactor<T>& v)
 
 
 template<class T>
-bool SimpleFactor<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
+bool simple_factor<T>::can_evaluate(const evaluator<T>& p, bool isarg) const
 {
   if (!term_)
     boost::throw_exception(std::runtime_error("Empty value in expression"));
@@ -179,13 +179,13 @@ bool SimpleFactor<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
 }
 
 template<class T>
-bool Factor<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
+bool factor<T>::can_evaluate(const evaluator<T>& p, bool isarg) const
 {
   return super_type::can_evaluate(p,unit_power() ? isarg : true) && power_.can_evaluate(p,true);
 }
 
 template <class T>
-typename SimpleFactor<T>::value_type SimpleFactor<T>::value(const Evaluator<T>& p, bool isarg) const
+typename simple_factor<T>::value_type simple_factor<T>::value(const evaluator<T>& p, bool isarg) const
 {
   if (!term_)
     boost::throw_exception(std::runtime_error("Empty value in expression"));
@@ -193,7 +193,7 @@ typename SimpleFactor<T>::value_type SimpleFactor<T>::value(const Evaluator<T>& 
 }
 
 template <class T>
-typename Factor<T>::value_type Factor<T>::value(const Evaluator<T>& p, bool isarg) const
+typename factor<T>::value_type factor<T>::value(const evaluator<T>& p, bool isarg) const
 {
   value_type val = super_type::value(p,unit_power() ? isarg : true);
   if (is_inverse())
@@ -204,37 +204,33 @@ typename Factor<T>::value_type Factor<T>::value(const Evaluator<T>& p, bool isar
 }
 
 template<class T>
-void SimpleFactor<T>::output(std::ostream& os) const
+void simple_factor<T>::output(std::ostream& os) const
 {
-  std::cout << "SimpleFactor[";
   if (!term_)
     boost::throw_exception(std::runtime_error("Empty value in expression"));
   term_->output(os);
-  std::cout << "]";
 }
 
 template<class T>
-void Factor<T>::output(std::ostream& os) const
+void factor<T>::output(std::ostream& os) const
 {
-  std::cout << "Factor[";
   super_type::output(os);
   if (!unit_power())
     os << "^" << power_;
-  std::cout << "]";
 }
 
 
 template<class T>
-boost::shared_ptr<Factor<T> > Factor<T>::flatten_one_value()
+boost::shared_ptr<factor<T> > factor<T>::flatten_one_value()
 {
   if (unit_power()) {
-    boost::shared_ptr<Evaluatable<T> > term=super_type::term_->flatten_one();
-    boost::shared_ptr<Factor<T> > val(new Factor<T>(*this));
+    boost::shared_ptr<evaluatable<T> > term=super_type::term_->flatten_one();
+    boost::shared_ptr<factor<T> > val(new factor<T>(*this));
     val->term_=term;
-    return val->term_ ? val : boost::shared_ptr<Factor<T> >();
+    return val->term_ ? val : boost::shared_ptr<factor<T> >();
   }
   else
-    return boost::shared_ptr<Factor<T> >();
+    return boost::shared_ptr<factor<T> >();
 }
 
 } // end namespace expression
@@ -247,39 +243,39 @@ namespace expression {
 #endif
 
 template<class T>
-inline bool operator==(const alps::expression::Factor<T>& ex1, const alps::expression::Factor<T>& ex2)
+inline bool operator==(const alps::expression::factor<T>& ex1, const alps::expression::factor<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) ==
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator==(const alps::expression::Factor<T>& ex, const std::string& s)
+inline bool operator==(const alps::expression::factor<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) == s;
 }
 
 template<class T>
-inline bool operator==(const std::string& s, const alps::expression::Factor<T>& ex)
+inline bool operator==(const std::string& s, const alps::expression::factor<T>& ex)
 {
   return ex == s;
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Factor<T>& ex1, const alps::expression::Factor<T>& ex2)
+inline bool operator<(const alps::expression::factor<T>& ex1, const alps::expression::factor<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) <
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Factor<T>& ex, const std::string& s)
+inline bool operator<(const alps::expression::factor<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) < s;
 }
 
 template<class T>
-inline bool operator<(const std::string& s, const alps::expression::Factor<T>& ex)
+inline bool operator<(const std::string& s, const alps::expression::factor<T>& ex)
 {
   return s < boost::lexical_cast<std::string>(ex);
 }

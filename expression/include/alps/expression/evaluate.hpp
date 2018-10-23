@@ -1,24 +1,23 @@
 #ifndef ALPS_EXPRESSION_EVALUATE_HPP
 #define ALPS_EXPRESSION_EVALUATE_HPP
 
-#include <alps/expression/expression_fwd.hpp>
-#include <alps/expression/expression.hpp>
-#include <alps/expression/evaluator.hpp>
-#include <alps/expression/evaluate_helper.hpp>
-#include <alps/expression/traits.hpp>
+#include "expression_fwd.hpp"
+#include "expression.hpp"
+#include "evaluator.hpp"
+#include "evaluate_helper.hpp"
 
 namespace alps {
 
 template<class T>
-inline bool can_evaluate(const expression::Evaluatable<T>& ex, const expression::Evaluator<T>& ev, bool isarg=false)
+inline bool can_evaluate(const expression::evaluatable<T>& ex, const expression::evaluator<T>& ev, bool isarg=false)
 {
   return ex.can_evaluate(ev,isarg);
 }
 
 template<class T>
-inline bool can_evaluate(const std::string& v, const expression::Evaluator<T>& p, bool isarg=false)
+inline bool can_evaluate(const std::string& v, const expression::evaluator<T>& p, bool isarg=false)
 {
-  return expression::Expression<T>(v).can_evaluate(p,isarg);
+  return expression::expression<T>(v).can_evaluate(p,isarg);
 }
 
 // inline bool can_evaluate(const std::string& v, const Parameters& p=Parameters())
@@ -44,31 +43,31 @@ inline bool can_evaluate(const std::string& v, const expression::Evaluator<T>& p
 // }
 
 template<class U, class T>
-inline U evaluate(const expression::Expression<T>& ex, const expression::Evaluator<T>& ev = expression::Evaluator<T>(), bool isarg=false)
+inline U evaluate(const expression::expression<T>& ex, const expression::evaluator<T>& ev = expression::evaluator<T>(), bool isarg=false)
 {
   return expression::evaluate_helper<U>::value(ex, ev, isarg);
 }
 
 template<class U, class T>
-inline U evaluate(const expression::Term<T>& ex, const expression::Evaluator<T>& ev = expression::Evaluator<T>(), bool isarg=false)
+inline U evaluate(const expression::term<T>& ex, const expression::evaluator<T>& ev = expression::evaluator<T>(), bool isarg=false)
 {
   return expression::evaluate_helper<U>::value(ex, ev,isarg);
 }
 
 template<class U, class T>
-inline U evaluate(const char* v, const expression::Evaluator<T>& ev, bool isarg=false)
+inline U evaluate(const char* v, const expression::evaluator<T>& ev, bool isarg=false)
 {
-  return expression::evaluate_helper<U>::value(expression::Expression<T>(std::string(v)), ev,isarg);
+  return expression::evaluate_helper<U>::value(expression::expression<T>(std::string(v)), ev,isarg);
 }
 
 template<class U, class T>
-inline U evaluate(const std::string& v, const expression::Evaluator<T>& ev, bool isarg=false)
+inline U evaluate(const std::string& v, const expression::evaluator<T>& ev, bool isarg=false)
 {
-  return expression::evaluate_helper<U>::value(expression::Expression<T>(v), ev,isarg);
+  return expression::evaluate_helper<U>::value(expression::expression<T>(v), ev,isarg);
 }
 
 // template<class U, class T>
-// inline U evaluate(const StringValue& v, const expression::Evaluator<T>& ev, bool isarg=false)
+// inline U evaluate(const StringValue& v, const expression::evaluator<T>& ev, bool isarg=false)
 // {
 //   return evaluate<U>(static_cast<std::string>(v), ev,isarg);
 // }
@@ -76,33 +75,33 @@ inline U evaluate(const std::string& v, const expression::Evaluator<T>& ev, bool
 template<class U>
 inline U evaluate(const char* v)
 {
-  return evaluate<U, U>(v, expression::Evaluator<
+  return evaluate<U, U>(v, expression::evaluator<
     typename expression::evaluate_helper<U>::value_type>());
 }
 inline double evaluate(const char* v) {
-  return evaluate<double, double>(v, expression::Evaluator<
+  return evaluate<double, double>(v, expression::evaluator<
     expression::evaluate_helper<double>::value_type>());
 }
 
 template<class U>
 inline U evaluate(const std::string& v)
 {
-  return evaluate<U, U>(v, expression::Evaluator<
+  return evaluate<U, U>(v, expression::evaluator<
     typename expression::evaluate_helper<U>::value_type>());
 }
 inline double evaluate(const std::string& v) {
-  return evaluate<double, double>(v, expression::Evaluator<
+  return evaluate<double, double>(v, expression::evaluator<
     expression::evaluate_helper<double>::value_type>());
 }
 
 // template<class U>
 // inline U evaluate(const StringValue& v)
 // {
-//   return evaluate<U, U>(v, expression::Evaluator<
+//   return evaluate<U, U>(v, expression::evaluator<
 //     typename expression::evaluate_helper<U>::value_type>());
 // }
 // inline double evaluate(const StringValue& v) {
-//   return evaluate<double, double>(v, expression::Evaluator<
+//   return evaluate<double, double>(v, expression::evaluator<
 //     expression::evaluate_helper<double>::value_type>());
 // }
 
@@ -110,7 +109,7 @@ inline double evaluate(const std::string& v) {
 // inline U evaluate(const char* v, const Parameters& p)
 // {
 //   return evaluate<U, typename expression::evaluate_helper<U>::value_type>(v,
-//     expression::ParameterEvaluator<
+//     expression::Parameterevaluator<
 //     typename expression::evaluate_helper<U>::value_type>(p));
 // }
 // inline double evaluate(const char* v, const Parameters& p)
@@ -152,7 +151,7 @@ template<class T>
 void simplify(T) {}
 
 template<class T>
-void simplify(expression::Expression<T>& x) { x.simplify();}
+void simplify(expression::expression<T>& x) { x.simplify();}
 
 
 // StringValue simplify_value(StringValue const& val, Parameters const& parms, bool eval_random=false);

@@ -8,29 +8,29 @@ namespace alps {
 namespace expression {
 
 template<class T>
-class Symbol : public Evaluatable<T> {
+class symbol : public evaluatable<T> {
 public:
   typedef T value_type;
 
-  Symbol(const std::string& n) : name_(n) {}
-  value_type value(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
-  bool can_evaluate(const Evaluator<T>& ev=Evaluator<T>(), bool isarg=false) const
+  symbol(const std::string& n) : name_(n) {}
+  value_type value(const evaluator<T>& =evaluator<T>(), bool=false) const;
+  bool can_evaluate(const evaluator<T>& ev=evaluator<T>(), bool isarg=false) const
   { return ev.can_evaluate(name_,isarg);}
-  void output(std::ostream& os) const { os << "Symbol[" << name_ << "]"; }
-  Evaluatable<T>* clone() const { return new Symbol<T>(*this); }
-  Evaluatable<T>* partial_evaluate_replace(const Evaluator<T>& =Evaluator<T>(), bool=false);
+  void output(std::ostream& os) const { os << name_; }
+  evaluatable<T>* clone() const { return new symbol<T>(*this); }
+  evaluatable<T>* partial_evaluate_replace(const evaluator<T>& =evaluator<T>(), bool=false);
   bool depends_on(const std::string& s) const;
 private:
   std::string name_;
 };
 
 template<class T>
-bool Symbol<T>::depends_on(const std::string& s) const {
+bool symbol<T>::depends_on(const std::string& s) const {
   return (name_==s);
 }
 
 template<class T>
-typename Symbol<T>::value_type Symbol<T>::value(const Evaluator<T>& eval, bool isarg) const
+typename symbol<T>::value_type symbol<T>::value(const evaluator<T>& eval, bool isarg) const
 {
   if (!eval.can_evaluate(name_,isarg))
     boost::throw_exception(std::runtime_error("Cannot evaluate " + name_ ));
@@ -38,13 +38,13 @@ typename Symbol<T>::value_type Symbol<T>::value(const Evaluator<T>& eval, bool i
 }
 
 template<class T>
-Evaluatable<T>* Symbol<T>::partial_evaluate_replace(const Evaluator<T>& p, bool isarg)
+evaluatable<T>* symbol<T>::partial_evaluate_replace(const evaluator<T>& p, bool isarg)
 {
-  Expression<T> e(p.partial_evaluate(name_,isarg));
+  expression<T> e(p.partial_evaluate(name_,isarg));
   if (e==name_)
     return this;
   else
-    return new Block<T>(p.partial_evaluate(name_,isarg));
+    return new block<T>(p.partial_evaluate(name_,isarg));
 }
 
 } // end namespace expression

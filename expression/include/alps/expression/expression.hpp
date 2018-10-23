@@ -10,38 +10,38 @@ namespace alps {
 namespace expression {
 
 template<class T>
-class Expression : public Evaluatable<T> {
+class expression : public evaluatable<T> {
 public:
   typedef T value_type;
-  typedef Term<T> term_type;
-  typedef typename std::vector<Term<T> >::const_iterator term_iterator;
+  typedef term<T> term_type;
+  typedef typename std::vector<term<T> >::const_iterator term_iterator;
 
-  Expression() {}
-  Expression(const std::string& str) { parse(str); }
-  Expression(std::istream& in) { parse(in); }
-  Expression(typename boost::call_traits<value_type>::param_type val)
-    : terms_(1,Term<T>(val)) {}
+  expression() {}
+  expression(const std::string& str) { parse(str); }
+  expression(std::istream& in) { parse(in); }
+  expression(typename boost::call_traits<value_type>::param_type val)
+    : terms_(1,term<T>(val)) {}
 #ifndef BOOST_NO_SFINAE
   template<class U>
-  Expression(U val, typename boost::enable_if<boost::is_arithmetic<U> >::type* = 0) : terms_(1,Term<T>(value_type(val))) {}
+  expression(U val, typename boost::enable_if<boost::is_arithmetic<U> >::type* = 0) : terms_(1,term<T>(value_type(val))) {}
 #else
-  Expression(int val) : terms_(1,Term<T>(value_type(val))) {}
+  expression(int val) : terms_(1,term<T>(value_type(val))) {}
 #endif
-  Expression(const Evaluatable<T>& e) : terms_(1,Term<T>(e)) {}
-  Expression(const Term<T>& e) : terms_(1,e) {}
-  virtual ~Expression() {}
+  expression(const evaluatable<T>& e) : terms_(1,term<T>(e)) {}
+  expression(const term<T>& e) : terms_(1,e) {}
+  virtual ~expression() {}
 
-  value_type value(const Evaluator<T>& = Evaluator<T>(), bool=false) const;
+  value_type value(const evaluator<T>& = evaluator<T>(), bool=false) const;
   // value_type value(const Parameters& p) const {
   //   return value(ParameterEvaluator<T>(p));
   // }
 
-  bool can_evaluate(const Evaluator<T>& = Evaluator<T>(), bool=false) const;
+  bool can_evaluate(const evaluator<T>& = evaluator<T>(), bool=false) const;
   // bool can_evaluate(const Parameters& p) const
   // {
   //   return can_evaluate(ParameterEvaluator<T>(p));
   // }
-  void partial_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false);
+  void partial_evaluate(const evaluator<T>& =evaluator<T>(), bool=false);
   // void partial_evaluate(const Parameters& p) {
   //   partial_evaluate(ParameterEvaluator<T>(p));
   // }
@@ -49,7 +49,7 @@ public:
   void sort();
   void output(std::ostream& os) const;
 
-  Evaluatable<T>* clone() const { return new Expression<T>(*this); }
+  evaluatable<T>* clone() const { return new expression<T>(*this); }
 
   std::pair<term_iterator,term_iterator> terms() const
   {
@@ -58,43 +58,43 @@ public:
 
   void flatten(); // multiply out all blocks
 
-  boost::shared_ptr<Expression> flatten_one_expression();
+  boost::shared_ptr<expression> flatten_one_expression();
 
-  const Expression& operator+=(const Term<T>& term)
+  const expression& operator+=(const term<T>& term)
   {
     terms_.push_back(term);
-    partial_evaluate(Evaluator<T>(false));
+    partial_evaluate(evaluator<T>());
     return *this;
   }
 
-  const Expression& operator-=(Term<T> term)
+  const expression& operator-=(term<T> term)
   {
     term.negate();
     terms_.push_back(term);
-    partial_evaluate(Evaluator<T>(false));
+    partial_evaluate(evaluator<T>());
     return *this;
   }
 
-  const Expression& operator+=(const Expression& e)
+  const expression& operator+=(const expression& e)
   {
     std::copy(e.terms_.begin(),e.terms_.end(),std::back_inserter(terms_));
-    partial_evaluate(Evaluator<T>(false));
+    partial_evaluate(evaluator<T>());
     return *this;
   }
 
-  const Expression& operator-=(Expression const& e)
+  const expression& operator-=(expression const& e)
   {
     return operator+=(-e);
   }
 
-  const Expression& operator*=(const Expression<T>& e)
+  const expression& operator*=(const expression<T>& e)
   {
-    Term<T> newt(Factor<T>(Block<T>(*this)));
-    newt *= Factor<T>(Block<T>(e));
+    term<T> newt(factor<T>(block<T>(*this)));
+    newt *= factor<T>(block<T>(e));
     terms_.clear();
     newt.remove_superfluous_parentheses();
     terms_.push_back(newt);
-    partial_evaluate(Evaluator<T>(false));
+    partial_evaluate(evaluator<T>());
     return *this;
   }
   
@@ -104,33 +104,33 @@ public:
 
   bool has_no_term()    const { return terms_.empty(); }
   bool is_single_term() const { return terms_.size() == 1; }
-  Term<T> term() const;
-  Term<T> zeroth_term() const { return terms_[0]; }
+  term<T> get_term() const;
+  term<T> zeroth_term() const { return terms_[0]; }
   bool depends_on(const std::string&) const;
 
-  Expression<T> expression_dependent_on(const std::string&) const;
-  Expression<T> expression_dependent_only_on(const std::string&) const;
+  expression<T> expression_dependent_on(const std::string&) const;
+  expression<T> expression_dependent_only_on(const std::string&) const;
 
   void parse(const std::string& str);
   bool parse(std::istream& is);
 
-  Expression operator-() const { Expression e(*this); e.negate(); return e;}
-  const Expression& negate() 
+  expression operator-() const { expression e(*this); e.negate(); return e;}
+  const expression& negate() 
   {
-    for (typename std::vector<Term<T> >::iterator it=terms_.begin();it!=terms_.end();++it)
+    for (typename std::vector<term<T> >::iterator it=terms_.begin();it!=terms_.end();++it)
       it->negate();
     return *this;
   } 
 private:
-  std::vector<Term<T> > terms_;
+  std::vector<term<T> > terms_;
 };
 
 //
-// implementation of Expression<T>
+// implementation of expression<T>
 //
 
 template<class T>
-bool Expression<T>::depends_on(const std::string& s) const {
+bool expression<T>::depends_on(const std::string& s) const {
   for(term_iterator it=terms().first; it!=terms().second; ++it)
     if (it->depends_on(s))
       return true;
@@ -138,37 +138,37 @@ bool Expression<T>::depends_on(const std::string& s) const {
 }
 
 template<class T>
-void Expression<T>::remove_superfluous_parentheses()
+void expression<T>::remove_superfluous_parentheses()
 {
-  for (typename std::vector<Term<T> >::iterator it=terms_.begin();
+  for (typename std::vector<term<T> >::iterator it=terms_.begin();
        it!=terms_.end(); ++it)
     it->remove_superfluous_parentheses();
 }
 
 template<class T>
-void Expression<T>::simplify()
+void expression<T>::simplify()
 {
-  partial_evaluate(Evaluator<T>(false));
-  for (typename std::vector<Term<T> >::iterator it=terms_.begin();
+  partial_evaluate(evaluator<T>());
+  for (typename std::vector<term<T> >::iterator it=terms_.begin();
        it!=terms_.end(); ++it)
     it->simplify();
   sort();
-  partial_evaluate(Evaluator<T>(false));
+  partial_evaluate(evaluator<T>());
 }
 
 template<class T>
-Term<T> Expression<T>::term() const
+term<T> expression<T>::get_term() const
 {
   if (!is_single_term())
-    boost::throw_exception(std::logic_error("Called term() for multi-term expression"));
+    boost::throw_exception(std::logic_error("Called get_term() for multi-term expression"));
   return terms_[0];
 }
 
 template<class T>
-Expression<T> Expression<T>::expression_dependent_on(const std::string& str) const
+expression<T> expression<T>::expression_dependent_on(const std::string& str) const
 {
-  Expression<T> e;
-  for (typename std::vector<Term<T> >::const_iterator it=terms_.begin();
+  expression<T> e;
+  for (typename std::vector<term<T> >::const_iterator it=terms_.begin();
        it!=terms_.end(); ++it)
     if (it->depends_on(str))
       e += (*it);
@@ -176,10 +176,10 @@ Expression<T> Expression<T>::expression_dependent_on(const std::string& str) con
 } 
 
 template<class T>
-Expression<T> Expression<T>::expression_dependent_only_on(const std::string& str) const
+expression<T> expression<T>::expression_dependent_only_on(const std::string& str) const
 {
-  Expression<T> e;
-  for (typename std::vector<Term<T> >::const_iterator it=terms_.begin();
+  expression<T> e;
+  for (typename std::vector<term<T> >::const_iterator it=terms_.begin();
        it!=terms_.end(); ++it)
     if (it->depends_only_on(str))
       e += (*it);
@@ -187,7 +187,7 @@ Expression<T> Expression<T>::expression_dependent_only_on(const std::string& str
 }
 
 template<class T>
-void Expression<T>::parse(const std::string& str)
+void expression<T>::parse(const std::string& str)
 {
   std::istringstream in(str);
   if (!parse(in))
@@ -195,7 +195,7 @@ void Expression<T>::parse(const std::string& str)
 }
 
 template<class T>
-bool Expression<T>::parse(std::istream& is)
+bool expression<T>::parse(std::istream& is)
 {
   terms_.clear();
   bool negate=false;
@@ -209,7 +209,7 @@ bool Expression<T>::parse(std::istream& is)
     negate=false;
   else
     is.putback(c);
-  terms_.push_back(Term<T>(is,negate));
+  terms_.push_back(term<T>(is,negate));
   while(true) {
     if(!(is >> c))
       return true;
@@ -223,32 +223,32 @@ bool Expression<T>::parse(std::istream& is)
       is.putback(c);
       return false;
     }
-    terms_.push_back(Term<T>(is,negate));
+    terms_.push_back(term<T>(is,negate));
   }
 }
 
 template <class T>
-void Expression<T>::sort()
+void expression<T>::sort()
 {
-  partial_evaluate(Evaluator<T>(false));
+  partial_evaluate(evaluator<T>());
   std::sort(terms_.begin(),terms_.end(),term_less<T>());
 
-  typename std::vector<Term<T> >::iterator prev,it;
+  typename std::vector<term<T> >::iterator prev,it;
   prev=terms_.begin();
   if (prev==terms_.end())
     return;
   it=prev;
   ++it;
   bool added=false;
-  std::pair<T,Term<T> > prev_term=prev->split();
+  std::pair<T,term<T> > prev_term=prev->split();
   while (it !=terms_.end()) {
-    std::pair<T,Term<T> > current_term=it->split();
+    std::pair<T,term<T> > current_term=it->split();
     
     if (prev_term.second==current_term.second) {
       prev_term.first += current_term.first;
       terms_.erase(it);
       added=true;
-      *prev=Term<T>(prev_term);
+      *prev=term<T>(prev_term);
       it = prev;
       ++it;
     }
@@ -268,7 +268,7 @@ void Expression<T>::sort()
 }
 
 template<class T>
-typename Expression<T>::value_type Expression<T>::value(const Evaluator<T>& p, bool isarg) const
+typename expression<T>::value_type expression<T>::value(const evaluator<T>& p, bool isarg) const
 {
   if (terms_.size()==0)
     return value_type(0.);
@@ -279,7 +279,7 @@ typename Expression<T>::value_type Expression<T>::value(const Evaluator<T>& p, b
 }
 
 template<class T>
-bool Expression<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
+bool expression<T>::can_evaluate(const evaluator<T>& p, bool isarg) const
 {
   if (terms_.size()==0)
     return true;
@@ -291,10 +291,10 @@ bool Expression<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
 }
 
 template<class T>
-void Expression<T>::partial_evaluate(const Evaluator<T>& p, bool isarg)
+void expression<T>::partial_evaluate(const evaluator<T>& p, bool isarg)
 {
   if (can_evaluate(p,isarg))
-    (*this) = Expression<T>(value(p,isarg));
+    (*this) = expression<T>(value(p,isarg));
   else {
     value_type val(0);
     for (unsigned int i=0; i<terms_.size(); ++i) {
@@ -306,14 +306,13 @@ void Expression<T>::partial_evaluate(const Evaluator<T>& p, bool isarg)
         terms_[i].partial_evaluate(p,isarg);
       }
     }
-    if (val != value_type(0.)) terms_.insert(terms_.begin(), Term<T>(val));
+    if (val != value_type(0.)) terms_.insert(terms_.begin(), term<T>(val));
   }
 }
 
 template<class T>
-void Expression<T>::output(std::ostream& os) const
+void expression<T>::output(std::ostream& os) const
 {
-  std::cout << "Expression[";
   if (terms_.size()==0)
     os <<"0";
   else {
@@ -324,15 +323,14 @@ void Expression<T>::output(std::ostream& os) const
       terms_[i].output(os);
     }
   }
-  std::cout << "]";
 }
 
 template<class T>
-void Expression<T>::flatten()
+void expression<T>::flatten()
 {
   unsigned int i=0;
   while (i<terms_.size()) {
-    boost::shared_ptr<Term<T> > term = terms_[i].flatten_one_term();
+    boost::shared_ptr<term<T> > term = terms_[i].flatten_one_term();
     if (term)
       terms_.insert(terms_.begin()+i,*term);
     else
@@ -341,17 +339,17 @@ void Expression<T>::flatten()
 }
 
 template<class T>
-boost::shared_ptr<Expression<T> > Expression<T>::flatten_one_expression()
+boost::shared_ptr<expression<T> > expression<T>::flatten_one_expression()
 {
   flatten();
   if (terms_.size()>1) {
-    boost::shared_ptr<Expression<T> > term(new Expression<T>());
-    term->terms_.push_back(terms_[0]);
+    boost::shared_ptr<expression<T> > tm(new expression<T>());
+    tm->terms_.push_back(terms_[0]);
     terms_.erase(terms_.begin());
-    return term;
+    return tm;
   }
   else
-    return boost::shared_ptr<Expression<T> >();
+    return boost::shared_ptr<expression<T> >();
 }
 
 } // end namespace expression
@@ -363,15 +361,15 @@ namespace expression {
 #endif
 
 template<class T>
-inline alps::expression::Expression<T> operator+(const alps::expression::Expression<T>& ex1, const alps::expression::Expression<T>& ex2)
+inline alps::expression::expression<T> operator+(const alps::expression::expression<T>& ex1, const alps::expression::expression<T>& ex2)
 {
-  alps::expression::Expression<T> ex(ex1);
+  alps::expression::expression<T> ex(ex1);
   ex += ex2;
   return ex;
 }
 
 template<class T>
-inline std::istream& operator>>(std::istream& is, alps::expression::Expression<T>& e)
+inline std::istream& operator>>(std::istream& is, alps::expression::expression<T>& e)
 {
   std::string s;
   is >> s;
@@ -380,58 +378,58 @@ inline std::istream& operator>>(std::istream& is, alps::expression::Expression<T
 }
 
 template<class T>
-inline bool operator==(const alps::expression::Expression<T>& ex1, const alps::expression::Expression<T>& ex2)
+inline bool operator==(const alps::expression::expression<T>& ex1, const alps::expression::expression<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) ==
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator==(const alps::expression::Expression<T>& ex, const std::string& s)
+inline bool operator==(const alps::expression::expression<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) == s;
 }
 
 template<class T>
-inline bool operator==(const std::string& s, const alps::expression::Expression<T>& ex)
+inline bool operator==(const std::string& s, const alps::expression::expression<T>& ex)
 {
   return ex == s;
 }
 
 template<class T>
-inline bool operator!=(const alps::expression::Expression<T>& ex1, const alps::expression::Expression<T>& ex2)
+inline bool operator!=(const alps::expression::expression<T>& ex1, const alps::expression::expression<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) !=
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator!=(const alps::expression::Expression<T>& ex, const std::string& s)
+inline bool operator!=(const alps::expression::expression<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) != s;
 }
 
 template<class T>
-inline bool operator!=(const std::string& s, const alps::expression::Expression<T>& ex)
+inline bool operator!=(const std::string& s, const alps::expression::expression<T>& ex)
 {
   return ex != s;
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Expression<T>& ex1, const alps::expression::Expression<T>& ex2)
+inline bool operator<(const alps::expression::expression<T>& ex1, const alps::expression::expression<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) <
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Expression<T>& ex, const std::string& s)
+inline bool operator<(const alps::expression::expression<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) < s;
 }
 
 template<class T>
-inline bool operator<(const std::string& s, const alps::expression::Expression<T>& ex)
+inline bool operator<(const std::string& s, const alps::expression::expression<T>& ex)
 {
   return s < boost::lexical_cast<std::string>(ex);
 }

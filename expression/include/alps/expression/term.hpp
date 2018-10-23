@@ -10,45 +10,45 @@ namespace alps {
 namespace expression {
 
 template<class T>
-class Term : public Evaluatable<T> {
+class term : public evaluatable<T> {
 public:
   typedef T value_type;
-  typedef typename std::vector<Factor<T> >::const_iterator factor_iterator;
+  typedef typename std::vector<factor<T> >::const_iterator factor_iterator;
 
-  Term(std::istream& is, bool negate = false);
-  Term() : is_negative_(false) {}
-  Term(typename boost::call_traits<value_type>::param_type x)
-    : is_negative_(false), terms_(1,Factor<T>(x)) {}
-  Term(const Evaluatable<T>& e)
-    : is_negative_(false), terms_(1,Factor<T>(e)) {}
-  Term(const std::pair<T,Term<T> >&);
-  virtual ~Term() {}
+  term(std::istream& is, bool negate = false);
+  term() : is_negative_(false) {}
+  term(typename boost::call_traits<value_type>::param_type x)
+    : is_negative_(false), terms_(1,factor<T>(x)) {}
+  term(const evaluatable<T>& e)
+    : is_negative_(false), terms_(1,factor<T>(e)) {}
+  term(const std::pair<T,term<T> >&);
+  virtual ~term() {}
 
-  value_type value(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
+  value_type value(const evaluator<T>& =evaluator<T>(), bool=false) const;
 
-  bool can_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false) const;
+  bool can_evaluate(const evaluator<T>& =evaluator<T>(), bool=false) const;
   void output(std::ostream&) const;
-  Evaluatable<T>* clone() const { return new Term<T>(*this); }
+  evaluatable<T>* clone() const { return new term<T>(*this); }
   bool is_negative() const { return is_negative_;}
-  boost::shared_ptr<Term> flatten_one_term();
-  void partial_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false);
-  std::pair<T,Term<T> > split() const;
+  boost::shared_ptr<term> flatten_one_term();
+  void partial_evaluate(const evaluator<T>& =evaluator<T>(), bool=false);
+  std::pair<T,term<T> > split() const;
   
-  const Term& operator*=(const Factor<T>& v)
+  const term& operator*=(const factor<T>& v)
   {
     terms_.push_back(v);
     return *this;
   }
 
-  friend Term operator*(const Factor<T>& v, Term<T> t)
+  friend term operator*(const factor<T>& v, term<T> t)
   {
       t.terms_.insert(t.terms_.begin(), v);
       return t;
   }
 
-  const Term& operator*=(const std::string& s)
+  const term& operator*=(const std::string& s)
   {
-    return operator*=(Factor<T>(s));
+    return operator*=(factor<T>(s));
   }
   
   void simplify();
@@ -67,18 +67,18 @@ public:
 
 private:
   bool is_negative_;
-  std::vector<Factor<T> > terms_;
+  std::vector<factor<T> > terms_;
 };
 
 template <class T>
 struct term_less {
-  bool operator()(const Term<T>& x, const Term<T>& y) {
+  bool operator()(const term<T>& x, const term<T>& y) {
     return x.split().second < y.split().second;
   }
 };
 
 template<class T>
-bool Term<T>::depends_on(const std::string& s) const {
+bool term<T>::depends_on(const std::string& s) const {
   for (factor_iterator it=factors().first; it!=factors().second; ++it)
     if(it->depends_on(s))
       return true;
@@ -86,7 +86,7 @@ bool Term<T>::depends_on(const std::string& s) const {
 }
 
 template<class T>
-bool Term<T>::depends_only_on(const std::string& s) const {
+bool term<T>::depends_only_on(const std::string& s) const {
   if (!depends_on(s))
     return false;
 
@@ -108,19 +108,19 @@ bool Term<T>::depends_only_on(const std::string& s) const {
 }
 
 template<class T>
-void Term<T>::simplify()
+void term<T>::simplify()
 {
-  partial_evaluate(Evaluator<T>(false));
+  partial_evaluate(evaluator<T>());
 }
 
 template<class T>
-void Term<T>::remove_superfluous_parentheses()
+void term<T>::remove_superfluous_parentheses()
 {
-  std::vector<Factor<T> > s;
-  for (typename std::vector<Factor<T> >::iterator it = terms_.begin();
+  std::vector<factor<T> > s;
+  for (typename std::vector<factor<T> >::iterator it = terms_.begin();
        it != terms_.end(); ++it) {
     if (it->is_single_term()) {
-      Term<T> t = it->term();
+      term<T> t = it->get_term();
       if (t.is_negative()) negate();
       std::copy(t.factors().first, t.factors().second,
                 std::back_inserter(s));
@@ -131,10 +131,10 @@ void Term<T>::remove_superfluous_parentheses()
 }
 
 template<class T>
-Term<T>::Term(std::istream& in, bool negate) : is_negative_(negate)
+term<T>::term(std::istream& in, bool negate) : is_negative_(negate)
 {
   bool is_inverse=false;
-  terms_.push_back(Factor<T>(in,is_inverse));
+  terms_.push_back(factor<T>(in,is_inverse));
   while (true) {
     char c;
     if (!(in>>c))
@@ -152,15 +152,15 @@ Term<T>::Term(std::istream& in, bool negate) : is_negative_(negate)
         in.putback(c);
         return;
     }
-    terms_.push_back(Factor<T>(in,is_inverse));
+    terms_.push_back(factor<T>(in,is_inverse));
   }
 }
 
 template<class T>
-typename Term<T>::value_type Term<T>::value(const Evaluator<T>& p, bool isarg) const
+typename term<T>::value_type term<T>::value(const evaluator<T>& p, bool isarg) const
 {
   value_type val(1.);
-  if (p.direction() == Evaluator<T>::left_to_right)  {
+  if (p.direction() == evaluator<T>::left_to_right)  {
     for (unsigned int i = 0; i < terms_.size() && (!numeric::is_zero(val)); ++i)
       val *= terms_[i].value(p,isarg);
 }
@@ -176,13 +176,13 @@ typename Term<T>::value_type Term<T>::value(const Evaluator<T>& p, bool isarg) c
 }
 
 template<class T>
-void Term<T>::partial_evaluate(const Evaluator<T>& p, bool isarg)
+void term<T>::partial_evaluate(const evaluator<T>& p, bool isarg)
 {
   if (can_evaluate(p,isarg)) {
-    (*this) = Term<T>(value(p,isarg));
+    (*this) = term<T>(value(p,isarg));
   } else {
     value_type val(1);
-    if (p.direction() == Evaluator<T>::left_to_right) {
+    if (p.direction() == evaluator<T>::left_to_right) {
       for (unsigned int i=0; i<terms_.size(); ++i) {
         if (terms_[i].can_evaluate(p,isarg)) {
           val *= terms_[i].value(p,isarg);
@@ -206,21 +206,21 @@ void Term<T>::partial_evaluate(const Evaluator<T>& p, bool isarg)
       }
     }
     if (numeric::is_zero(val))
-      (*this) = Term<T>(value_type(0.));
+      (*this) = term<T>(value_type(0.));
     else {
       if (evaluate_helper<T>::real(val) < 0.) {
         is_negative_=!is_negative_;
         val=-val;
       }
       if (val != value_type(1.))
-        terms_.insert(terms_.begin(), Factor<T>(val));
+        terms_.insert(terms_.begin(), factor<T>(val));
     }
   }
   remove_superfluous_parentheses();
 }
 
 template<class T>
-bool Term<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
+bool term<T>::can_evaluate(const evaluator<T>& p, bool isarg) const
 {
   bool can=true;
   for (unsigned int i=0;i<terms_.size();++i)
@@ -229,9 +229,8 @@ bool Term<T>::can_evaluate(const Evaluator<T>& p, bool isarg) const
 }
 
 template<class T>
-void Term<T>::output(std::ostream& os) const
+void term<T>::output(std::ostream& os) const
 {
-  std::cout << "Term[";
   if (terms_.empty()) {
     os << "0";
     return;
@@ -243,22 +242,21 @@ void Term<T>::output(std::ostream& os) const
     os << " " << (terms_[i].is_inverse() ? "/" : "*") << " ";
     terms_[i].output(os);
   }
-  std::cout << "]";
 }
 
 template<class T>
-Term<T>::Term(const std::pair<T,Term<T> >& t)
+term<T>::term(const std::pair<T,term<T> >& t)
  :  is_negative_(false),terms_(t.second.terms_)
 {
-  terms_.insert(terms_.begin(), Factor<T>(t.first));
-  partial_evaluate(Evaluator<T>(false));
+  terms_.insert(terms_.begin(), factor<T>(t.first));
+  partial_evaluate(evaluator<T>());
 }
 
 template<class T>
-std::pair<T,Term<T> > Term<T>::split() const
+std::pair<T,term<T> > term<T>::split() const
 {
-  Term<T> t(*this);
-  t.partial_evaluate(Evaluator<T>(false));
+  term<T> t(*this);
+  t.partial_evaluate(evaluator<T>());
   T val=1.;
   if (t.terms_.empty())
     val=0.;
@@ -275,18 +273,18 @@ std::pair<T,Term<T> > Term<T>::split() const
 
 
 template<class T>
-boost::shared_ptr<Term<T> > Term<T>::flatten_one_term()
+boost::shared_ptr<term<T> > term<T>::flatten_one_term()
 {
   for (unsigned int i=0;i<terms_.size();++i)
     if (!terms_[i].is_inverse()) {
-      boost::shared_ptr<Factor<T> > val = terms_[i].flatten_one_value();
+      boost::shared_ptr<factor<T> > val = terms_[i].flatten_one_value();
       if (val) {
-        boost::shared_ptr<Term<T> > term(new Term<T>(*this));
-        term->terms_[i]=*val;
-        return term;
+        boost::shared_ptr<term<T> > tm(new term<T>(*this));
+        tm->terms_[i]=*val;
+        return tm;
       }
   }
-  return boost::shared_ptr<Term>();
+  return boost::shared_ptr<term>();
 }
 
 }
@@ -299,39 +297,39 @@ namespace expression {
 #endif
 
 template<class T>
-inline bool operator==(const alps::expression::Term<T>& ex1, const alps::expression::Term<T>& ex2)
+inline bool operator==(const alps::expression::term<T>& ex1, const alps::expression::term<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) ==
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator==(const alps::expression::Term<T>& ex, const std::string& s)
+inline bool operator==(const alps::expression::term<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) == s;
 }
 
 template<class T>
-inline bool operator==(const std::string& s, const alps::expression::Term<T>& ex)
+inline bool operator==(const std::string& s, const alps::expression::term<T>& ex)
 {
   return ex == s;
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Term<T>& ex1, const alps::expression::Term<T>& ex2)
+inline bool operator<(const alps::expression::term<T>& ex1, const alps::expression::term<T>& ex2)
 {
   return (boost::lexical_cast<std::string>(ex1) <
           boost::lexical_cast<std::string>(ex2));
 }
 
 template<class T>
-inline bool operator<(const alps::expression::Term<T>& ex, const std::string& s)
+inline bool operator<(const alps::expression::term<T>& ex, const std::string& s)
 {
   return boost::lexical_cast<std::string>(ex) < s;
 }
 
 template<class T>
-inline bool operator<(const std::string& s, const alps::expression::Term<T>& ex)
+inline bool operator<(const std::string& s, const alps::expression::term<T>& ex)
 {
   return s < boost::lexical_cast<std::string>(ex);
 }

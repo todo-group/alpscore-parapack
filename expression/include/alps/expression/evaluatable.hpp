@@ -14,28 +14,28 @@ namespace alps {
 namespace expression {
 
 template<class T>
-class Evaluatable {
+class evaluatable {
 public:
   typedef T value_type;
 
-  Evaluatable() {}
-  virtual ~Evaluatable() {}
-  virtual value_type value(const Evaluator<T>& =Evaluator<T>(), bool=false) const = 0;
-  virtual bool can_evaluate(const Evaluator<T>& =Evaluator<T>(), bool=false) const = 0;
+  evaluatable() {}
+  virtual ~evaluatable() {}
+  virtual value_type value(const evaluator<T>& =evaluator<T>(), bool=false) const = 0;
+  virtual bool can_evaluate(const evaluator<T>& =evaluator<T>(), bool=false) const = 0;
   virtual void output(std::ostream&) const = 0;
-  virtual Evaluatable* clone() const = 0;
-  virtual boost::shared_ptr<Evaluatable> flatten_one() { return boost::shared_ptr<Evaluatable>(); }
-  virtual Evaluatable* partial_evaluate_replace(const Evaluator<T>& =Evaluator<T>(),bool=false) { return this; }
+  virtual evaluatable* clone() const = 0;
+  virtual boost::shared_ptr<evaluatable> flatten_one() { return boost::shared_ptr<evaluatable>(); }
+  virtual evaluatable* partial_evaluate_replace(const evaluator<T>& =evaluator<T>(),bool=false) { return this; }
   virtual bool is_single_term() const { return false; }
-  virtual Term<T> term() const;
+  virtual term<T> get_term() const;
   virtual bool depends_on(const std::string&) const { return false; }
 };
 
 template<class T>
-inline Term<T> Evaluatable<T>::term() const { return Term<T>(); }
+inline term<T> evaluatable<T>::get_term() const { return term<T>(); }
 
 template<class T>
-inline std::ostream& operator<<(std::ostream& os, const alps::expression::Evaluatable<T>& e) {
+inline std::ostream& operator<<(std::ostream& os, const alps::expression::evaluatable<T>& e) {
   e.output(os);
   return os;
 }

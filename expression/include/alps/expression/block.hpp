@@ -9,26 +9,26 @@ namespace alps {
 namespace expression {
 
 template<class T>
-class Block : public Expression<T> {
+class block : public expression<T> {
 private:
-  typedef Expression<T> BASE_;
+  typedef expression<T> BASE_;
 
 public:
-  Block(std::istream&);
-  Block(const Expression<T>& e) : BASE_(e) {}
+  block(std::istream&);
+  block(const expression<T>& e) : BASE_(e) {}
   void output(std::ostream&) const;
-  Evaluatable<T>* clone() const { return new Block<T>(*this); }
+  evaluatable<T>* clone() const { return new block<T>(*this); }
   void flatten();
-  boost::shared_ptr<Evaluatable<T> > flatten_one();
-  Evaluatable<T>* partial_evaluate_replace(const Evaluator<T>& =Evaluator<T>(),bool=false);
+  boost::shared_ptr<evaluatable<T> > flatten_one();
+  evaluatable<T>* partial_evaluate_replace(const evaluator<T>& =evaluator<T>(),bool=false);
 };
 
 //
-// implementation of Block<T>
+// implementation of block<T>
 //
 
 template<class T>
-Block<T>::Block(std::istream& in) : Expression<T>(in)
+block<T>::block(std::istream& in) : expression<T>(in)
 {
   char c;
   in >> c;
@@ -36,37 +36,35 @@ Block<T>::Block(std::istream& in) : Expression<T>(in)
     boost::throw_exception(std::runtime_error(") or , expected in expression"));
   if (c == ',') {
     // read imaginary part
-    Expression<T> ex(in);
-    Block<T> bl(ex);
-    Term<T> term(bl);
-    term *= "I";
-    *this += term;
+    expression<T> ex(in);
+    block<T> bl(ex);
+    term<T> tm(bl);
+    tm *= "I";
+    *this += tm;
     check_character(in,')',") expected in expression");
   }
 }
 
 template<class T>
-boost::shared_ptr<Evaluatable<T> > Block<T>::flatten_one()
+boost::shared_ptr<evaluatable<T> > block<T>::flatten_one()
 {
-  boost::shared_ptr<Expression<T> > ex = BASE_::flatten_one_expression();
+  boost::shared_ptr<expression<T> > ex = BASE_::flatten_one_expression();
   if (ex)
-    return boost::shared_ptr<Evaluatable<T> >(new Block<T>(*ex));
+    return boost::shared_ptr<evaluatable<T> >(new block<T>(*ex));
   else
-    return boost::shared_ptr<Evaluatable<T> >();
+    return boost::shared_ptr<evaluatable<T> >();
 }
 
 template<class T>
-void Block<T>::output(std::ostream& os) const
+void block<T>::output(std::ostream& os) const
 {
-  os << "Block[(";
   BASE_::output(os);
-  os << ")]";
 }
 
 template<class T>
-Evaluatable<T>* Block<T>::partial_evaluate_replace(const Evaluator<T>& p, bool isarg)
+evaluatable<T>* block<T>::partial_evaluate_replace(const evaluator<T>& p, bool isarg)
 {
-  Expression<T>::partial_evaluate(p,isarg);
+  expression<T>::partial_evaluate(p,isarg);
   return this;
 }
 

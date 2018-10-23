@@ -4,7 +4,6 @@
 #include <boost/call_traits.hpp>
 #include <alps/numeric/is_zero.hpp>
 #include "expression_fwd.hpp"
-#include "traits.hpp"
 
 namespace alps {
 namespace expression {
@@ -50,23 +49,23 @@ struct evaluate_helper
 {
   typedef U value_type;
   template<class R>
-  static U value(const Term<R>& ex, const Evaluator<R>& =Evaluator<R>(), bool=false) { return ex; }
+  static U value(const term<R>& ex, const evaluator<R>& =evaluator<R>(), bool=false) { return ex; }
   template<class R>
-  static U value(const Expression<R>& ex, const Evaluator<R>& =Evaluator<R>(), bool=false) { return ex; }
+  static U value(const expression<R>& ex, const evaluator<R>& =evaluator<R>(), bool=false) { return ex; }
   static U real(typename boost::call_traits<U>::param_type u) { return u; }
 };
 
 template<class U>
-struct evaluate_helper<Expression<U> >
+struct evaluate_helper<expression<U> >
 {
   typedef U value_type;
-  static Expression<U> value(const Term<U>& ex, const Evaluator<U>& ev=Evaluator<U>(), bool isarg=false) {
-    Term<U> t(ex);
+  static expression<U> value(const term<U>& ex, const evaluator<U>& ev=evaluator<U>(), bool isarg=false) {
+    term<U> t(ex);
     t.partial_evaluate(ev,isarg);
     return t;
   }
-  static Expression<U> value(const Expression<U>& ex, const Evaluator<U>& ev=Evaluator<U>(), bool isarg=false) {
-    Expression<U> e(ex);
+  static expression<U> value(const expression<U>& ex, const evaluator<U>& ev=evaluator<U>(), bool isarg=false) {
+    expression<U> e(ex);
     e.partial_evaluate(ev,isarg);
     return e;
   }
@@ -77,12 +76,12 @@ struct evaluate_helper<double>
 {
   typedef double value_type;
   template<class R>
-  static double value(const Term<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static double value(const term<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return alps::expression::numeric_cast<double>(ex.value(ev,isarg));
   }
   template<class R>
-  static double value(const Expression<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static double value(const expression<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return alps::expression::numeric_cast<double>(ex.value(ev,isarg));
   }
@@ -105,12 +104,12 @@ struct evaluate_helper<float>
 {
   typedef float value_type;
   template<class R>
-  static float value(const Term<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static float value(const term<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return numeric_cast<float>(ex.value(ev,isarg));
   }
   template<class R>
-  static float value(const Expression<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static float value(const expression<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return numeric_cast<float>(ex.value(ev,isarg));
   }
@@ -133,12 +132,12 @@ struct evaluate_helper<long double>
 {
   typedef long double value_type;
   template<class R>
-  static long double value(const Term<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static long double value(const term<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return numeric_cast<long double>(ex.value(ev,isarg));
   }
   template<class R>
-  static long double value(const Expression<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static long double value(const expression<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return numeric_cast<long double>(ex.value(ev,isarg));
   }
@@ -161,12 +160,12 @@ struct evaluate_helper<std::complex<U> >
 {
   typedef std::complex<U> value_type;
   template<class R>
-  static std::complex<U> value(const Term<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static std::complex<U> value(const term<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return ex.value(ev,isarg);
   }
   template<class R>
-  static std::complex<U> value(const Expression<R>& ex, const Evaluator<R>& ev=Evaluator<R>(), bool isarg=false)
+  static std::complex<U> value(const expression<R>& ex, const evaluator<R>& ev=evaluator<R>(), bool isarg=false)
   {
     return ex.value(ev,isarg);
   }

@@ -48,22 +48,22 @@ bool ParameterEvaluator<T>::can_evaluate(const std::string& name, bool isarg) co
   if (!parms_.defined(name) || !parms_[name].valid()) return false;
   Parameters parms(parms_);
   parms[name] = ""; // set illegal to avoid infinite recursion
-  bool can = Expression<T>(parms_[name]).can_evaluate(ParameterEvaluator<T>(parms,this->evaluate_random()),isarg);
+  bool can = expression<T>(parms_[name]).can_evaluate(ParameterEvaluator<T>(parms,this->evaluate_random()),isarg);
   return can;
 }
 
 template<class T>
-Expression<T> ParameterEvaluator<T>::partial_evaluate(const std::string& name, bool isarg) const
+expression<T> ParameterEvaluator<T>::partial_evaluate(const std::string& name, bool isarg) const
 {
-  Expression<T> e;
+  expression<T> e;
   if (ParameterEvaluator<T>::can_evaluate(name,isarg))
     e=ParameterEvaluator<T>::evaluate(name,isarg);
   else if(!parms_.defined(name))
-    e=Expression<T>(name);
+    e=expression<T>(name);
   else {
     Parameters p(parms_);
     p[name]="";
-    e=Expression<T>(static_cast<std::string>(parms_[name]));
+    e=expression<T>(static_cast<std::string>(parms_[name]));
     e.partial_evaluate(ParameterEvaluator<T>(p,this->evaluate_random()),isarg);
   }
   return e;
