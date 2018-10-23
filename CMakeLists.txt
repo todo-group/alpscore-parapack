@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.1)
+if(NOT CMAKE_BUILD_TYPE)
+    message("Using default build type: Release")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+endif()
+project(ALPSCoreParapack CXX)
+find_package(ALPSCore REQUIRED)
+add_subdirectory(expression)

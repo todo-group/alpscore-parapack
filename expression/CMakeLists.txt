@@ -1,0 +1,5 @@
+include_directories(include)
+# add_library(alps-expression SHARED src/evaluator.C)
+# target_link_libraries(alps-expression ${ALPSCore_LIBRARIES})
+add_executable(expression test/expression.cpp)
+target_link_libraries(expression ${ALPSCore_LIBRARIES})
